@@ -56,7 +56,7 @@ namespace MicroMarinCase.Application.UseCases.RecordUseCases.Commands
         {
             var records = _jsonSenitizer.CollectRecords(request.Data, request.RecordType, null, true);
 
-            await _recordRepository.CreateRange(records);
+            await _recordRepository.CreateRange(records, cancellationToken);
 
             await _recordRepository.SaveChangesAsync(cancellationToken);
 

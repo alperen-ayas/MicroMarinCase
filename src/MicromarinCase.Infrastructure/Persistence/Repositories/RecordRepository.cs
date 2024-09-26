@@ -11,93 +11,92 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MicroMarinCase.Infrastructure.Persistence.Repositories
+namespace MicroMarinCase.Infrastructure.Persistence.Repositories;
+
+public class RecordRepository : IRecordRepository
 {
-    public class RecordRepository : IRecordRepository
+    private readonly DynamicDbContext _dbContext;
+
+    public RecordRepository(DynamicDbContext dbContext)
     {
-        private readonly DynamicDbContext _dbContext;
+        _dbContext = dbContext;
+    }
 
-        public RecordRepository(DynamicDbContext dbContext)
+    public async Task Create(Record record, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Set<Record>().AddAsync(record,cancellationToken);
+    }
+
+    public async Task CreateRange(List<Record> records, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Set<Record>().AddRangeAsync(records,cancellationToken);
+    }
+
+    public async Task Delete(Record record)
+    {
+        _dbContext.Set<Record>().Remove(record);
+    }
+
+    public async Task<List<Record>> Get(List<FilterParameter> filters, string id = null,CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Set<Record>().AsQueryable();
+
+        if (!string.IsNullOrEmpty(id))
         {
-            _dbContext = dbContext;
+            query = query.Where(record => record.Id == id);
         }
 
-        public async Task Create(Record record)
+        foreach (var filter in filters)
         {
-            await _dbContext.Set<Record>().AddAsync(record);
-        }
+            if (filter.FilterType == "Equals")
+                query = query.Where(record => DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}") == filter.Value);
+            //else if (filter.FilterType == "GreaterThan")
+            //{
+            //    int intVal;
+            //    DateTime dateVal;
+            //    if (int.TryParse(filter.Value, out var filterValue))
+            //        query = query.Where(record => EF.Functions DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}") >= filterValue);
+            //    else if (DateTime.TryParse(filter.Value, out var filterDatetime))
+            //        query = query.Where(record => DateTime.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) >= filterDatetime);
+            //    else
+            //        throw new InvalidFilterException("Filtre değeri bir sayı veya tarihe çevrilemiyor.");
+            //}
+            //else if (filter.FilterType == "LessThan")
+            //{
+            //    int intVal;
+            //    DateTime dateVal;
+            //    if (int.TryParse(filter.Value, out var filterValue))
+            //        query = query.Where(record => int.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) <= int.Parse(filter.Value));
+            //    else if(DateTime.TryParse(filter.Value,out var filterDatetime))
+            //        query = query.Where(record => DateTime.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) <= DateTime.Parse(filter.Value));
+            //    else
+            //        throw new InvalidFilterException("Filtre değeri bir sayı veya tarihe çevrilemiyor.");
+            //}
+            //else if(filter.FilterType == "Include" && filter.Key != null)
+            //{
 
-        public async Task CreateRange(List<Record> records)
-        {
-            await _dbContext.Set<Record>().AddRangeAsync(records);
-        }
-
-        public async Task Delete(Record record)
-        {
-            _dbContext.Set<Record>().Remove(record);
-        }
-
-        public async Task<List<Record>> Get(List<FilterParameter> filters, string id = null,CancellationToken cancellationToken = default)
-        {
-            var query = _dbContext.Set<Record>().AsQueryable();
-
-            if (!string.IsNullOrEmpty(id))
+            //}
+            else
             {
-                query = query.Where(record => record.Id == id);
+                throw new NotImplementedException($"Bu filtre tipi({filter.FilterType}) filtre çeşitlerimize dahil değildir.");
             }
-
-            foreach (var filter in filters)
-            {
-                if (filter.FilterType == "Equals")
-                    query = query.Where(record => DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}") == filter.Value);
-                //else if (filter.FilterType == "GreaterThan")
-                //{
-                //    int intVal;
-                //    DateTime dateVal;
-                //    if (int.TryParse(filter.Value, out var filterValue))
-                //        query = query.Where(record => EF.Functions DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}") >= filterValue);
-                //    else if (DateTime.TryParse(filter.Value, out var filterDatetime))
-                //        query = query.Where(record => DateTime.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) >= filterDatetime);
-                //    else
-                //        throw new InvalidFilterException("Filtre değeri bir sayı veya tarihe çevrilemiyor.");
-                //}
-                //else if (filter.FilterType == "LessThan")
-                //{
-                //    int intVal;
-                //    DateTime dateVal;
-                //    if (int.TryParse(filter.Value, out var filterValue))
-                //        query = query.Where(record => int.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) <= int.Parse(filter.Value));
-                //    else if(DateTime.TryParse(filter.Value,out var filterDatetime))
-                //        query = query.Where(record => DateTime.Parse(DbFunctionExtensions.JsonValue(record.Data, $"$.{filter.Key}")) <= DateTime.Parse(filter.Value));
-                //    else
-                //        throw new InvalidFilterException("Filtre değeri bir sayı veya tarihe çevrilemiyor.");
-                //}
-                //else if(filter.FilterType == "Include" && filter.Key != null)
-                //{
-
-                //}
-                else
-                {
-                    throw new NotImplementedException($"Bu filtre tipi({filter.FilterType}) filtre çeşitlerimize dahil değildir.");
-                }
-            }
-
-            return await query.ToListAsync(cancellationToken);
         }
 
-        public async Task<Record> Get(string id = null, CancellationToken cancellationToken = default)
-        {
-            return await _dbContext.Set<Record>().FindAsync(id, cancellationToken);
-        }
+        return await query.ToListAsync(cancellationToken);
+    }
 
-        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            return await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+    public async Task<Record> Get(string id = null, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<Record>().FindAsync(id, cancellationToken);
+    }
 
-        public async Task Update(Record record)
-        {
-            await Task.Run(()=> _dbContext.Set<Record>().Update(record));
-        }
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task Update(Record record)
+    {
+        await Task.Run(()=> _dbContext.Set<Record>().Update(record));
     }
 }

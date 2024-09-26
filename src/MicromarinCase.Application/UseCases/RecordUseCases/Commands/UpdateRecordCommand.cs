@@ -37,14 +37,14 @@ namespace MicroMarinCase.Application.UseCases.RecordUseCases.Commands
 
         public async Task<Result> Handle(UpdateRecordCommand request, CancellationToken cancellationToken)
         {
-            var record = await _recordRepository.Get(request.Id);
+            var record = await _recordRepository.Get(request.Id, cancellationToken);
 
             if(record==null)
                 return Result.Error("Geçersiz kayıt.");
 
             record.UpdateData(request.Data);
 
-            await _recordRepository.SaveChangesAsync();
+            await _recordRepository.SaveChangesAsync(cancellationToken);
 
             return Result.Success("Güncellendi.");
         }

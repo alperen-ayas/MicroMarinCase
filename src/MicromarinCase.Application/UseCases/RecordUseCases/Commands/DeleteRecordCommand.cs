@@ -38,7 +38,7 @@ namespace MicroMarinCase.Application.UseCases.RecordUseCases.Commands
 
             await _recordRepository.Delete(record);
 
-            await _recordRepository.SaveChangesAsync();
+            await _recordRepository.SaveChangesAsync(cancellationToken);
 
             if (record == null)
                 return Result.Error("Operation failed");

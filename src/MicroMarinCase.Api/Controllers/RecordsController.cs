@@ -26,9 +26,8 @@ namespace MicroMarinCase.Api.Controllers
         [HttpPost("{recordType}")]
         public async Task<IActionResult> Create(string recordType, [FromBody] JsonObject request, CancellationToken cancellationToken = default)
         {
-            var command = new CreateRecordCommand() { Data = request, RecordType = recordType };
 
-            await _mediator.Send(command);
+            await _mediator.Send(new CreateRecordCommand() { Data = request, RecordType = recordType }, cancellationToken);
 
             return Ok();
         }
@@ -36,7 +35,7 @@ namespace MicroMarinCase.Api.Controllers
         [HttpPost("records/filter")]
         public async Task<IActionResult> GetRecords([FromBody] GetRecordQuery query, CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(query, cancellationToken);
 
             return Ok(result);
         }
@@ -44,7 +43,7 @@ namespace MicroMarinCase.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id,JsonObject data, CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new UpdateRecordCommand() { Id=id,Data=data});
+            var result = await _mediator.Send(new UpdateRecordCommand() { Id=id,Data=data}, cancellationToken);
 
             if (result.IsSuccess)
                 return NoContent();
@@ -54,7 +53,7 @@ namespace MicroMarinCase.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id,CancellationToken cancellationToken = default)
         {
-            var result = await _mediator.Send(new DeleteRecordCommand() { Id = id });
+            var result = await _mediator.Send(new DeleteRecordCommand() { Id = id }, cancellationToken);
 
             if(result.IsSuccess)
                 return NoContent();
