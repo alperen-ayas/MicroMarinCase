@@ -1,0 +1,6 @@
+@MicroMarinCase.Api_HostAddress = http://localhost:5004
+
+GET {{MicroMarinCase.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
